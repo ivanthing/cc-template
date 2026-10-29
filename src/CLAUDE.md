@@ -1,7 +1,7 @@
 # src/ Directory Rules
 
 > Rules here override the root CLAUDE.md and apply only within src/.
-> Customize for your project structure.
+> Example for a Next.js App Router project. Rewrite it for your stack, or delete this file.
 
 ## Directory Layout
 ```

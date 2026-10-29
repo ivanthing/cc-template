@@ -5,8 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use the **planner agent** to help draft this issue:
-        `Use the planner agent to define requirements for: [your idea]`
+        Fuzzy idea? Sharpen it in Claude Code first with `/grill-me`, then `/spec`.
 
   - type: textarea
     id: user-value

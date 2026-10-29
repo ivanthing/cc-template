@@ -29,22 +29,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Skip the deploy until it is configured; no secret means a fresh project.
+      - name: Check deploy secrets
+        id: secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "has=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::VERCEL_TOKEN is not set; skipping deploy. Configure it or delete this workflow (README → Quick start → step 7)."
+          fi
+
       - name: Setup Node.js
+        if: steps.secrets.outputs.has == '1'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.secrets.outputs.has == '1'
         run: npm ci
 
       - name: Build
+        if: steps.secrets.outputs.has == '1'
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.PRODUCTION_AUTH_SECRET }}
 
       - name: Deploy to Vercel (Production)
+        if: steps.secrets.outputs.has == '1'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}

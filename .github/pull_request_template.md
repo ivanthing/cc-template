@@ -1,30 +1,20 @@
-## What does this PR do?
+## Summary
 
-[Brief description of the change and its purpose]
+<diagram, diff-sketch, or tree>
 
-## Related Issue
+## Evidence
 
-closes #[issue-number]
+- **Before:** <screenshot/output/failing test run>
+  **After:** <screenshot/output/passing test run>
 
-## Type of change
+## Merge Danger
 
-- [ ] `feat` — new feature
-- [ ] `fix` — bug fix
-- [ ] `refactor` — code restructure, no behavior change
-- [ ] `docs` — documentation only
-- [ ] `chore` — build, deps, config
+**Door:** <one-way or two-way>
 
-## How to test
+<optional: description>
 
-1. [Step one]
-2. [Step two]
-3. [Expected result]
+**Blast Radius:** <one-word description>
 
-## Checklist
+<optional: potential ramifications of merge>
 
-- [ ] Tests pass (`npm run test`)
-- [ ] No lint errors (`npm run lint`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] PR references the GitHub Issue
-- [ ] `docs/progress.md` updated if needed
-- [ ] No hardcoded secrets or API keys
+closes #
