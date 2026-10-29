@@ -65,7 +65,7 @@ Click **"Use this template"** on the repository page. GitHub creates a new repo 
 
 **Option B — Clone and reset**
 ```bash
-git clone https://github.com/[YOUR_USERNAME]/claude-code-template.git my-project
+git clone https://github.com/ivanthing/cc-template.git my-project
 cd my-project
 rm -rf .git && git init
 ```
