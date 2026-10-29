@@ -16,3 +16,5 @@
 **Blast Radius:** <one-word description>
 
 <optional: potential ramifications of merge>
+
+closes #
