@@ -119,7 +119,7 @@ npm run build
 Same as commit title: `feat(auth): add Google OAuth login`
 
 ### PR Description Template
-See `.github/pull_request_template.md` — it's auto-populated when you open a PR.
+See `.github/pull_request_template.md` — it's auto-populated when you open a PR, and matches the body `/open-pr` writes (Summary / Evidence / Merge Danger).
 
 ### Review Process
 1. **Automated review** (Claude GitHub App) — runs immediately on PR open

@@ -50,7 +50,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
     ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
-    ├── pull_request_template.md       # PR checklist and description structure
+    ├── pull_request_template.md       # Summary / Evidence / Merge Danger (same as /open-pr)
     └── claude-code-review.yml         # Claude GitHub App review configuration
 ```
 
