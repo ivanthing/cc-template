@@ -83,8 +83,10 @@ rm -rf .git && git init
 Then start Claude Code:
 
 ```bash
-claude --dangerously-skip-permissions
+claude
 ```
+
+The default permission mode is enough: the `allow` list in `.claude/settings.json` covers every command the workflow runs, and in testing the full Small tweak and Big flows finished with zero permission prompts. See [Why the default permission mode?](#design-decisions) before reaching for `--dangerously-skip-permissions`.
 
 ### 3. Start your first feature
 
@@ -187,7 +189,7 @@ When a new developer joins:
 2. Copy `.env.example` → `.env.local` and fill in values
 3. Read `CLAUDE.md`, `CONSTRAINTS.md`, `docs/decisions/`, and `docs/git-workflow.md`
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
-5. Start from the project root: `claude --dangerously-skip-permissions`
+5. Start from the project root: `claude`
 6. Pick up an issue: `/start-feature [issue number or description]`
 
 ---
@@ -218,12 +220,12 @@ When a new developer joins:
 
 ## Design decisions
 
-**Why `--dangerously-skip-permissions`?**
-Prevents Claude from pausing to ask permission for safe, expected operations like running eslint or tsc. In this mode the `deny` list in `.claude/settings.json` is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
+**Why the default permission mode?**
+The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs the whole flow without prompts, and anything outside the list still asks first. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
 - **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
-- **A sandbox** for unattended runs: `/sandbox`, a devcontainer, or a disposable VM.
+- **A sandbox**: `/sandbox`, a devcontainer, or a disposable VM.
 
-If you don't have both, run with `--permission-mode acceptEdits` instead, so shell commands outside the `allow` list still ask first. That is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. Neither the `deny` list nor `acceptEdits` is a sandbox; for untrusted input (issues, fetched docs) use the default permission mode or `/sandbox`.
+Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. Neither the `deny` list nor `acceptEdits` is a sandbox; for untrusted input (issues, fetched docs) use the default permission mode or `/sandbox`.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.

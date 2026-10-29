@@ -221,7 +221,7 @@ git rebase origin/main
 # use git worktrees to isolate Claude Code sessions
 git worktree add ../project-feature-b feature/b
 cd ../project-feature-b
-claude --dangerously-skip-permissions
+claude
 ```
 
 ### Shared Knowledge (Claude reads these)
@@ -247,7 +247,7 @@ When you discover a pattern Claude keeps getting wrong:
 2. Copy `.env.example` → `.env.local` and fill in values
 3. Read `CLAUDE.md`, `CONSTRAINTS.md`, and `docs/decisions/`
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
-5. Run: `claude --dangerously-skip-permissions` from the project root
+5. Run: `claude` from the project root. The default permission mode is enough: the `allow` list in `.claude/settings.json` covers the whole workflow without prompts. Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox (see README → Design decisions).
 6. Start with: `/start-feature [your first issue]`
 
 ---
@@ -260,7 +260,7 @@ git fetch origin && git rebase origin/main
 
 # Start a feature
 git checkout -b feature/[issue-number]-[description]
-claude --dangerously-skip-permissions
+claude
 /start-feature [describe the feature]
 
 # During development — Claude handles commits, but manual checkpoint:
