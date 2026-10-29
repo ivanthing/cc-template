@@ -49,9 +49,10 @@ jobs:
         if: steps.lock.outputs.has == '1'
         run: npx tsc --noEmit
 
+      # Runs the project's own test script as-is; put coverage flags in that script.
       - name: Run tests
         if: steps.lock.outputs.has == '1'
-        run: npm run test -- --coverage
+        run: npm run test
 
       - name: Build
         if: steps.lock.outputs.has == '1'
