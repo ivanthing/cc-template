@@ -49,9 +49,16 @@ jobs:
         if: steps.lock.outputs.has == '1'
         run: npx tsc --noEmit
 
+      # Runs the project's own test script as-is; coverage is enforced by check:full below.
       - name: Run tests
         if: steps.lock.outputs.has == '1'
-        run: npm run test -- --coverage
+        run: npm run test
+
+      # The quality bar from CONSTRAINTS.md (coverage, security scans); /constraints
+      # defines it as the check:full script. No-op until that script exists.
+      - name: Constraints (check:full)
+        if: steps.lock.outputs.has == '1'
+        run: npm run --if-present check:full
 
       - name: Build
         if: steps.lock.outputs.has == '1'
