@@ -32,6 +32,8 @@ Start every piece of work with `/start-feature [issue or description]`. It picks
 | Big / fuzzy | Unclear requirement, or spans several modules | `/grill-me` → `/spec` → `/plan-tasks` → `/to-tickets` → `/build` (or `/build auto`) → `/review-code` → `/open-pr` |
 | Production / security / irreversible | Auth, payments, data migrations, deploys, or anything `git revert` can't undo | The Big flow, plus `/doubt-driven-development` and the `security-and-hardening` skill; run `/ship` for a go/no-go before `/open-pr` |
 
+When suggesting the next step, quote only commands exactly as written in this table; never recommend a similar skill from another plugin.
+
 Enter `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-development`, `shipping-and-launch` and `constraint-driven-development` only through their command, this table, or when a command's text tells you to (e.g. `/build auto` steps 3 and 6). Do not trigger them because a task description looks like a match.
 
 ## Project Docs

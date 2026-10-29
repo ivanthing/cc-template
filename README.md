@@ -47,11 +47,11 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
     ├── workflows/
     │   ├── ci.yml                     # Lint + type check + test + build on every push
     │   ├── template-checks.yml        # Runs scripts/check-skills.sh (no Node needed)
+    │   ├── claude-review.yml          # Claude reviews every PR (needs ANTHROPIC_API_KEY)
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
     ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
-    ├── pull_request_template.md       # Summary / Evidence / Merge Danger (same as /open-pr)
-    └── claude-code-review.yml         # Claude GitHub App review configuration
+    └── pull_request_template.md       # Summary / Evidence / Merge Danger (same as /open-pr)
 ```
 
 ---
@@ -70,46 +70,23 @@ cd my-project
 rm -rf .git && git init
 ```
 
-### 2. Configure the placeholders
+### 2. Initialize the project, in this order
 
-Open `CLAUDE.md` and fill in:
-- `[YOUR_PROJECT_NAME]`
-- Your actual tech stack
-- Your actual dev/build/test/lint commands
+1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else.
+2. **Make the toolchain runnable**: `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
+3. **Run `/run-skill-generator`** inside Claude Code. It generates a project-specific script to launch your app, which `prove-it-works` uses.
+4. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
+5. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. The others fail on every run until configured:
+   - `claude-review.yml` (runs on every PR): run `/install-github-app` inside Claude Code and `gh secret set ANTHROPIC_API_KEY`, or delete the file.
+   - `deploy-staging.yml` (runs on every push to `main`) and `deploy-production.yml` (manual trigger): replace the Vercel step with your platform's deploy, add their secrets in **GitHub → Settings → Secrets and variables → Actions**, and for production create a GitHub Environment named `production` with required reviewers. Or delete them until you deploy.
 
-### 3. Set up CI/CD
-
-In `.github/workflows/`:
-- `ci.yml` works out of the box — no changes needed
-- `deploy-staging.yml` — uncomment your platform's deploy block (Vercel, Railway, Fly.io, etc.)
-- `deploy-production.yml` — same, plus set up a GitHub Environment named `production` with required reviewers
-
-Add your secrets in **GitHub → Settings → Secrets and variables → Actions**.
-
-### 4. Enable the Claude GitHub App (optional but recommended)
-
-Run this inside Claude Code after the repo is on GitHub:
-```
-/install-github-app
-```
-It will automatically review every PR for bugs and security issues.
-Review behavior is configured in `.github/claude-code-review.yml`.
-
-### 5. Start Claude Code and initialize the project
+Then start Claude Code:
 
 ```bash
 claude --dangerously-skip-permissions
 ```
 
-Then run these once per project:
-```
-/run-skill-generator     # generates a project-specific script to launch your app (used by prove-it-works)
-/constraints             # writes CONSTRAINTS.md, the quality bar /open-pr guards
-```
-
-Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
-
-### 6. Start your first feature
+### 3. Start your first feature
 
 ```
 /start-feature [your first issue or feature description]

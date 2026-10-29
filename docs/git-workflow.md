@@ -124,7 +124,7 @@ See `.github/pull_request_template.md` — it's auto-populated when you open a P
 ### Review Process
 1. **Automated review** (Claude GitHub App) — runs immediately on PR open
    - Checks for bugs and security vulnerabilities
-   - Does NOT comment on style (configured in `.github/claude-code-review.yml`)
+   - Does NOT comment on style (the prompt is in `.github/workflows/claude-review.yml`)
 2. **Team review** — at least one approval required
    - Focus on: business logic, architecture decisions, edge cases
    - Not on: formatting (handled by prettier), style preferences
