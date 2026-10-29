@@ -34,6 +34,8 @@ jobs:
             Do NOT comment on code style, naming conventions, or formatting.
             Be concise. Only flag real problems that could affect correctness or security.
             For each issue found, explain: what the problem is, why it matters, and how to fix it.
-            Leave your review with `gh pr comment`; if there are no issues, say so briefly.
+            Leave each issue as an inline comment on the line it concerns; if there are no issues, say nothing.
+          # Inline comments go through the action's MCP tool, which holds the token itself.
+          # No `gh pr comment`: its --body-file flag can post any local file.
           claude_args: |
-            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr diff:*),Bash(gh pr view:*)"

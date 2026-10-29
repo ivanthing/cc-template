@@ -15,12 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Skip the rest until the project has a lockfile (e.g. the bare template repo).
+      # Skip the rest only in the bare template (no package.json); a project with
+      # package.json but no package-lock.json fails instead of passing unchecked.
       # hashFiles() is not allowed in a job-level if, so the check is a step.
       - name: Check for lockfile
         id: lock
         run: |
-          if [ -f package-lock.json ]; then echo "has=1" >> "$GITHUB_OUTPUT"; else echo "No package-lock.json; skipping."; fi
+          if [ -f package-lock.json ]; then
+            echo "has=1" >> "$GITHUB_OUTPUT"
+          elif [ -f package.json ]; then
+            echo "::error::package.json without package-lock.json. Commit the lockfile, or edit ci.yml for your package manager."
+            exit 1
+          else
+            echo "No package.json; skipping."
+          fi
 
       - name: Setup Node.js
         if: steps.lock.outputs.has == '1'

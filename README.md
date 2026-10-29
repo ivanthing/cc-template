@@ -47,7 +47,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
     ├── workflows/
     │   ├── ci.yml                     # Lint + type check + test + build on every push
     │   ├── template-checks.yml        # Runs scripts/check-skills.sh (no Node needed)
-    │   ├── claude-review.yml          # Claude reviews every PR (needs ANTHROPIC_API_KEY)
+    │   ├── claude-review.yml          # Claude reviews same-repo PRs (needs the App + key)
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
     ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
@@ -74,14 +74,14 @@ rm -rf .git && git init
 
 1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else.
 2. **Make the toolchain runnable**: `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
-3. **Put the repo on GitHub.** Option A already did; after Option B, create the repo and push (`gh repo create --source . --private --push`). `/to-tickets`, `/open-pr` and step 7 need the remote.
+3. **Put the repo on GitHub.** Option A already did (clone it to work locally). After Option B, make the initial commit on `main` and push it: `git add -A && git commit -m "chore: initial commit from template" && gh repo create --source . --private --push`. This one commit is the only exception to the never-commit-to-`main` rule. `/to-tickets`, `/open-pr` and step 7 need the remote.
 4. **Start Claude Code** from the project root:
 
    ```bash
    claude
    ```
 
-   The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so those run without prompts; ad-hoc verification commands (`curl`, a run script, `gh api`) still ask. See [Design decisions](#design-decisions) before reaching for `--dangerously-skip-permissions`.
+   The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so those run without prompts; ad-hoc verification commands (`curl`, a run script, `gh api`) still ask when run directly. See [Design decisions](#design-decisions) before reaching for `--dangerously-skip-permissions`.
 5. **Run `/run-skill-generator` once there is an app to run.** It generates a project-specific script to launch your app, which `prove-it-works` uses.
 6. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
 7. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. The others fail on every run until configured:
@@ -206,7 +206,7 @@ When a new developer joins:
 **Week 2 — Team workflow**
 - [ ] Confirm CI is running on every PR (`ci.yml`)
 - [ ] Configure and test staging deploy (`deploy-staging.yml`)
-- [ ] If you kept `claude-review.yml`, confirm Claude reviews every PR
+- [ ] If you kept `claude-review.yml`, confirm Claude reviews same-repo PRs
 - [ ] Run a Big-tier feature end to end: `/spec` → `/plan-tasks` → `/to-tickets` → `/build`
 - [ ] Start logging bugs to `docs/learnings.md`
 
@@ -221,11 +221,11 @@ When a new developer joins:
 ## Design decisions
 
 **Why the default permission mode?**
-The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs those steps without prompts, and anything outside the list (ad-hoc verification such as `curl` or `gh api`) still asks first. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
+The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs those steps without prompts, and anything outside the list (ad-hoc verification such as `curl` or `gh api`) still asks first when run directly. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
 - **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
 - **A sandbox**: `/sandbox`, a devcontainer, or a disposable VM.
 
-Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. The default mode is not a boundary either: the `allow` list auto-approves commands that can run code or upload files (`npm run`, `git fetch`/`git rebase`, `gh issue create`), and the `Read` deny rules do not stop a shell command from reading `.env` files. Neither the `deny` list, `acceptEdits`, nor the default mode with this `allow` list is a sandbox; for untrusted input (issues from outside contributors, fetched docs) run inside `/sandbox` or a devcontainer with no production credentials.
+Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. The default mode is not a boundary either: the `allow` list auto-approves commands that can run code or upload files (`npm run`, `npx --no-install -c '<any shell>'`, `git fetch`/`git rebase`, `gh issue create`), and the `Read` deny rules do not stop a shell command from reading `.env` files. Neither the `deny` list, `acceptEdits`, nor the default mode with this `allow` list is a sandbox; for untrusted input (issues from outside contributors, fetched docs) run inside `/sandbox` or a devcontainer with no production credentials.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.
