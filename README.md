@@ -30,7 +30,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 ├── src/
 │   └── CLAUDE.md                      # Directory-level rules for src/
 ├── .claude/
-│   ├── settings.json                  # Hooks (prettier + eslint on write) + permissions
+│   ├── settings.json                  # Hooks (eslint + prettier on write) + permissions
 │   ├── VENDORED.md                    # What was copied from where, pins, and local edits
 │   ├── agents/                        # code-reviewer, security-auditor, test-engineer (Addy)
 │   ├── commands/                      # /spec /plan-tasks /build /test /review-code /ship
@@ -130,7 +130,7 @@ Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/
 | Big / fuzzy | Unclear requirement, or spans several modules | `/grill-me` → `/spec` → `/plan-tasks` → `/to-tickets` → `/build` (or `/build auto`) → `/review-code` → `/open-pr` |
 | Production / security / irreversible | Auth, payments, data migrations, deploys, or anything `git revert` can't undo | The Big flow, plus `/doubt-driven-development` and the `security-and-hardening` skill; run `/ship` for a go/no-go before `/open-pr` |
 
-In the Big tier, `/to-tickets` turns each task in `tasks/todo.md` into a GitHub issue and writes its `#N` back onto the task line; `/open-pr` then closes every issue the branch delivered in one PR.
+In the Big tier, `/to-tickets` turns each task in `tasks/plan.md` into a GitHub issue and writes its `#N` back onto the task line in `tasks/todo.md`. A Big feature may ship over several PRs: each `/open-pr` closes the issues of the tasks that PR checked off, and only references the parent issue.
 
 ### After the PR
 
@@ -246,7 +246,7 @@ Prevents Claude from pausing to ask permission for safe, expected operations lik
 - **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
 - **A sandbox** for unattended runs: `/sandbox`, a devcontainer, or a disposable VM.
 
-If you don't have both, run with `--permission-mode acceptEdits` instead, so shell commands outside the `allow` list still ask first.
+If you don't have both, run with `--permission-mode acceptEdits` instead, so shell commands outside the `allow` list still ask first. That is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. Neither the `deny` list nor `acceptEdits` is a sandbox; for untrusted input (issues, fetched docs) use the default permission mode or `/sandbox`.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.

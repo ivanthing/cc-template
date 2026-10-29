@@ -34,7 +34,7 @@ docs/api-authentication
 ### Rules
 - `main` is **protected** — no direct pushes, ever
 - Feature branches live for **1–3 days max** — keep PRs small and focused
-- Every PR closes at least one GitHub Issue — a Big-tier feature's PR closes all of its task issues
+- Every PR closes at least one GitHub Issue — a Big-tier feature may span several PRs, each closing the task issues it completed
 - Delete the branch after the PR is merged
 
 ---

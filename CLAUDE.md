@@ -20,7 +20,7 @@
 - Build: `[npm run build]`
 - Test: `[npm run test]`
 - Lint: `[npm run lint]`
-- Type check: `[npx tsc --noEmit]`
+- Type check: `[npx --no-install tsc --noEmit]`
 
 ## Ceremony by Stakes
 Start every piece of work with `/start-feature [issue or description]`. It picks a tier from this table; higher stakes get more ceremony. When work sits between two tiers, use the higher one.
@@ -52,7 +52,7 @@ Enter `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-de
 - Always work on a feature branch — never commit directly to main
 - Commit before any large refactor as a checkpoint
 - Follow Conventional Commits format (applied by `/open-pr`)
-- Every PR closes at least one GitHub Issue (a Big-tier PR closes all of its task issues)
+- Every PR closes at least one GitHub Issue (a Big-tier feature may span several PRs; each closes the task issues it completed)
 - See `docs/git-workflow.md` for the full team branching strategy
 
 ## Compound Engineering Loop

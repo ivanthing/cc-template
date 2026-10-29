@@ -43,7 +43,7 @@ Publish one issue per ticket with `gh issue create`, in dependency order (blocke
 
 Apply the `ready-for-agent` label only if it already exists in the repo (`gh label list`); never create labels.
 
-After publishing, append each issue number to its task's line in `tasks/todo.md` (e.g. `- [ ] Task 3: Export to CSV (#42)`), so `/build` keeps working from the checklist and `/open-pr` can close every issue the branch delivers.
+After publishing, append each issue number to its task's line in `tasks/todo.md` (e.g. `- [ ] Task 3: Export to CSV (#42)`), so `/build` keeps working from the checklist and `/open-pr` can close the issues of the tasks each PR checks off. If there is a parent issue, add a `Parent: #N` line at the top of `tasks/todo.md` so `/open-pr` references it instead of closing it.
 
 Work the **frontier**: any ticket whose blockers are all done. For a purely linear chain that means top to bottom.
 
