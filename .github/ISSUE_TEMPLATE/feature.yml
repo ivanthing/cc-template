@@ -1,0 +1,46 @@
+name: Feature
+description: A new feature or enhancement
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use the **planner agent** to help draft this issue:
+        `Use the planner agent to define requirements for: [your idea]`
+
+  - type: textarea
+    id: user-value
+    attributes:
+      label: User Value
+      description: Who benefits and how? (one sentence)
+      placeholder: "As a [user], I want to [action] so that [benefit]."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Specific, testable conditions. Each item must be independently verifiable.
+      placeholder: |
+        - [ ] User sees X when Y happens
+        - [ ] System does Z when input is invalid
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Technical breakdown by layer (fill in what you know, Claude will refine)
+      placeholder: |
+        - [ ] Database: 
+        - [ ] API: 
+        - [ ] Frontend: 
+        - [ ] Tests: 
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: What will NOT be built in this issue?

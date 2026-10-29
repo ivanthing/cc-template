@@ -1,0 +1,30 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  claude-review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Only report bugs and security issues -- not style preferences
+          direct_prompt: |
+            Review this pull request for bugs and security vulnerabilities only.
+            Do NOT comment on code style, naming conventions, or formatting.
+            Be concise. Only flag real problems that could affect correctness or security.
+            For each issue found, explain: what the problem is, why it matters, and how to fix it.
