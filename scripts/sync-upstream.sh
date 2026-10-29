@@ -9,11 +9,13 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 C="$ROOT/.claude"
 pin() { sed -n "s/^$1=//p" "$C/VENDORED.md"; }
 ADDY_SHA=$(pin ADDY_SHA)
+MATT_SHA=$(pin MATT_SHA)
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 fetch() { git clone -q "$1" "$TMP/$2" && git -C "$TMP/$2" checkout -q "$3"; }
 fetch https://github.com/addyosmani/agent-skills.git addy "$ADDY_SHA"
+fetch https://github.com/mattpocock/skills.git matt "$MATT_SHA"
 
 ADDY_SKILLS=(
   spec-driven-development planning-and-task-breakdown incremental-implementation
@@ -70,7 +72,19 @@ for n in $(ls "$TMP/addy/skills"); do
   ' "${FILES[@]}"
 done
 
-echo "Re-vendored addy@${ADDY_SHA:0:7}."
+MATT_SKILLS=(productivity/grill-me productivity/grilling engineering/to-tickets engineering/pr)
+MATT_FILES=()
+for s in "${MATT_SKILLS[@]}"; do
+  n=$(basename "$s")
+  rm -rf "$C/skills/$n"
+  cp -R "$TMP/matt/skills/$s" "$C/skills/$n"
+  rm -rf "$C/skills/$n/agents" # Codex-only metadata
+  while IFS= read -r f; do MATT_FILES+=("$f"); done < <(find "$C/skills/$n" -type f)
+done
+# This repo keeps no glossary by default.
+perl -pi -e 's{`GLOSSARY\.md`(?! \(if present\))}{`GLOSSARY.md` (if present)}g' "${MATT_FILES[@]}"
+
+echo "Re-vendored addy@${ADDY_SHA:0:7} matt@${MATT_SHA:0:7}."
 echo "Re-apply any semantic edits listed in .claude/VENDORED.md that the diff below reverts."
 git -C "$ROOT" --no-pager diff --stat -- .claude
 git -C "$ROOT" --no-pager diff -- .claude
