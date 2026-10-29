@@ -1,0 +1,22 @@
+name: Template Checks
+
+# Integrity checks for the .claude/ workflow (names, references, settings, hooks).
+# Needs only bash, perl and jq, so it runs even before the project has a package.json.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  skills:
+    name: Skills integrity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check skills, commands, agents and settings
+        run: scripts/check-skills.sh
