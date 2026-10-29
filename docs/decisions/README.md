@@ -1,7 +1,9 @@
-# Architecture Decision Records (ADR)
+# Architecture Decisions
 
 > Documents important architectural decisions and the reasoning behind them.
 > Prevents future team members (and Claude) from re-debating settled decisions.
+> Each decision is its own `ADR-NNN-title.md` file in this directory, written with the
+> `documentation-and-adrs` skill (which holds the ADR template).
 
 ## Tech Choices
 
@@ -22,11 +24,3 @@ Client → Next.js App → API Routes → Database
                 Auth Layer
 ```
 
-## Decision Log
-
-### ADR-001: [Decision title]
-- **Date**: [YYYY-MM-DD]
-- **Status**: [Accepted / Deprecated / Proposed]
-- **Context**: [What situation prompted this decision?]
-- **Decision**: [What was decided?]
-- **Consequences**: [What are the trade-offs?]

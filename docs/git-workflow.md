@@ -1,7 +1,7 @@
 # Git Workflow & Team Collaboration Guide
 
 > This document defines how the team uses Git, branches, PRs, CI/CD, and deploys.
-> Claude Code agents follow these rules automatically via CLAUDE.md and the commit/ship commands.
+> Claude Code agents follow these rules automatically via CLAUDE.md and the `/open-pr` skill.
 
 ---
 
@@ -41,7 +41,7 @@ docs/api-authentication
 
 ## Commit Convention
 
-We use **Conventional Commits** (enforced by the `commit` agent via `/ship`).
+We use **Conventional Commits** (applied by the `git-workflow-and-versioning` skill via `/open-pr`).
 
 ### Format
 ```
@@ -104,8 +104,8 @@ npm run test
 npm run lint
 npm run build
 
-# 3. Use the /ship command — it handles all of the above automatically
-/ship
+# 3. Use /open-pr — it runs the quality gate, commits, pushes, and opens the PR
+/open-pr
 ```
 
 ### PR Requirements (enforced via GitHub branch protection)
@@ -230,14 +230,14 @@ These files are the team's shared brain that Claude Code loads at session start:
 | File                    | Owner         | Update frequency      |
 |-------------------------|---------------|-----------------------|
 | `CLAUDE.md`             | Team lead     | Weekly or as needed   |
-| `docs/constraints.md`   | Team          | As new patterns emerge|
-| `docs/architecture.md`  | Tech lead     | Per major decision    |
+| `CONSTRAINTS.md`        | Team          | As new patterns emerge|
+| `docs/decisions/`       | Tech lead     | Per major decision    |
 | `docs/learnings.md`     | Everyone      | After every incident  |
 
 ### How to Update Team Rules
 When you discover a pattern Claude keeps getting wrong:
 1. Fix the current session manually
-2. Open the relevant file (`CLAUDE.md` or `docs/constraints.md`)
+2. Open the relevant file (`CLAUDE.md` or `CONSTRAINTS.md`)
 3. Add the rule in plain English
 4. Commit with: `docs: add constraint for [what you learned]`
 5. The whole team benefits immediately
@@ -245,7 +245,7 @@ When you discover a pattern Claude keeps getting wrong:
 ### Onboarding a New Team Member
 1. Clone the repo
 2. Copy `.env.example` → `.env.local` and fill in values
-3. Read `CLAUDE.md`, `docs/constraints.md`, and `docs/architecture.md`
+3. Read `CLAUDE.md`, `CONSTRAINTS.md`, and `docs/decisions/`
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
 5. Run: `claude --dangerously-skip-permissions` from the project root
 6. Start with: `/start-feature [your first issue]`
@@ -267,7 +267,7 @@ claude --dangerously-skip-permissions
 git add -A && git commit -m "chore: checkpoint before refactor"
 
 # Finish a feature
-/ship                          # runs tests, commits, pushes, creates PR
+/open-pr                       # gates, commits, pushes, creates PR
 
 # After PR is merged — clean up
 git checkout main

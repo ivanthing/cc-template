@@ -11,7 +11,7 @@
 ## Completed
 - [ ] Project initialized
 - [ ] CLAUDE.md configured
-- [ ] PRD written
+- [ ] SPEC.md written (`/spec`)
 
 ## In Progress
 - [ ] [What is actively being worked on right now]

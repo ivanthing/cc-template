@@ -23,7 +23,7 @@ Run this before closing Claude Code.
      - $ARGUMENTS if extra notes were provided
 
 3. **Remind the user to**:
-   - Run `git add -A && git commit -m "chore: checkpoint"` if they haven't committed recently
+   - Stage only the files changed this session and commit them (`git add <files> && git commit -m "chore: checkpoint"`) if they haven't committed recently; never `git add -A`
    - Push the branch: `git push origin [branch-name]`
 
 4. **Optional**: If the session produced key learnings, append them to `docs/learnings.md`

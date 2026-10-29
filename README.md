@@ -3,7 +3,13 @@
 A production-ready Claude Code workflow template for teams.
 Clone it, fill in the placeholders, and you're ready to build.
 
-Synthesized from Anthropic's official best practices, Boris Cherny's (Claude Code creator) workflow, Kieran Klaassen's Compound Engineering philosophy, and battle-tested community patterns.
+Synthesized from Anthropic's official best practices, Boris Cherny's (Claude Code creator) workflow, Kieran Klaassen's Compound Engineering philosophy, and three curated skill packs:
+
+- **[Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills)** — the development lifecycle: spec → plan → build → test → review → ship
+- **[Matt Pocock's skills](https://github.com/mattpocock/skills)** — grilling a design before code, plan → GitHub issues, PR bodies
+- **[pstack](https://github.com/cursor/plugins/tree/main/pstack)** — the "prove it works" verification principle
+
+More skills don't make a smarter agent. Each one here has a specific caller, and how much of the process runs depends on the stakes of the change (see [Ceremony by stakes](#ceremony-by-stakes)).
 
 ---
 
@@ -11,48 +17,37 @@ Synthesized from Anthropic's official best practices, Boris Cherny's (Claude Cod
 
 ```
 .
-├── CLAUDE.md                          # Global rules — Claude reads this every session
+├── CLAUDE.md                          # Global rules + the ceremony-by-stakes table
+├── THIRD_PARTY_LICENSES.md            # Licenses of the vendored skill packs
 ├── docs/
-│   ├── PRD.md                         # Product requirements document
-│   ├── constraints.md                 # What NOT to do
 │   ├── progress.md                    # Cross-session state handoff
 │   ├── learnings.md                   # Error → rule log (Compound Engineering)
-│   ├── architecture.md                # Architecture decision records
 │   ├── git-workflow.md                # Team Git, CI/CD, and deploy guide
-│   └── decisions/                     # Per-feature design decision records
+│   └── decisions/                     # Architecture decision records (ADRs)
+├── scripts/
+│   └── sync-upstream.sh               # Re-vendor skills at the pinned upstream commits
 ├── src/
 │   └── CLAUDE.md                      # Directory-level rules for src/
 ├── .claude/
-│   ├── settings.json                  # Hooks (auto-format + test guard) + permissions
-│   ├── agents/
-│   │   ├── planner.md                 # PRD generation via product interview
-│   │   ├── docs-explorer.md           # Live doc fetching via Context7 MCP
-│   │   ├── test-runner.md             # PRD-driven test execution
-│   │   ├── security-reviewer.md       # Pre-ship security audit
-│   │   ├── refactor.md                # Fresh-session refactoring specialist
-│   │   └── commit.md                  # Conventional Commits generator
-│   ├── skills/
-│   │   ├── grill-me/                  # Technical design interrogation
-│   │   ├── prd-to-issues/             # PRD → vertical-slice GitHub Issues
-│   │   ├── tdd/                       # Red → Green → Refactor cycle
-│   │   ├── improve-arch/              # Architecture review and deepening
-│   │   ├── tech-debt/                 # End-of-session cleanup
-│   │   └── frontend/                  # UI design standards
-│   └── commands/
-│       ├── start-feature.md           # /start-feature
-│       ├── grill.md                   # /grill
-│       ├── review.md                  # /review
-│       ├── handoff.md                 # /handoff
-│       ├── ship.md                    # /ship
-│       └── lfg.md                     # /lfg  (full automated loop)
+│   ├── settings.json                  # Hooks (prettier + eslint on write) + permissions
+│   ├── VENDORED.md                    # What was copied from where, pins, and local edits
+│   ├── agents/                        # code-reviewer, security-auditor, test-engineer (Addy)
+│   ├── commands/                      # /spec /plan-tasks /build /test /review-code /ship
+│   │                                  # /code-simplify /constraints (Addy), /handoff
+│   ├── references/                    # Checklists the Addy skills cite
+│   └── skills/
+│       ├── start-feature/             # /start-feature — classify stakes, route the work
+│       ├── open-pr/                   # /open-pr — gate, commit, push, open PR
+│       ├── prove-it-works/            # Verify on the real thing (from pstack)
+│       ├── grill-me/ grilling/        # Design interrogation (Matt)
+│       ├── to-tickets/ pr/            # Plan → GitHub issues, PR body template (Matt)
+│       └── …                          # 16 lifecycle skills (Addy), see .claude/VENDORED.md
 └── .github/
     ├── workflows/
     │   ├── ci.yml                     # Lint + type check + test + build on every push
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
-    ├── ISSUE_TEMPLATE/
-    │   ├── feature.md                 # Feature issue template
-    │   └── bug.md                     # Bug report template
+    ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
     ├── pull_request_template.md       # PR checklist and description structure
     └── claude-code-review.yml         # Claude GitHub App review configuration
 ```
@@ -80,8 +75,6 @@ Open `CLAUDE.md` and fill in:
 - Your actual tech stack
 - Your actual dev/build/test/lint commands
 
-Open `docs/constraints.md` and add any project-specific constraints.
-
 ### 3. Set up CI/CD
 
 In `.github/workflows/`:
@@ -100,16 +93,19 @@ Run this inside Claude Code after the repo is on GitHub:
 It will automatically review every PR for bugs and security issues.
 Review behavior is configured in `.github/claude-code-review.yml`.
 
-### 5. Start Claude Code
+### 5. Start Claude Code and initialize the project
 
 ```bash
 claude --dangerously-skip-permissions
 ```
 
-Or add an alias to your shell config:
-```bash
-alias cc="claude --dangerously-skip-permissions"
+Then run these once per project:
 ```
+/run-skill-generator     # generates a project-specific script to launch your app (used by prove-it-works)
+/constraints             # writes CONSTRAINTS.md, the quality bar /open-pr guards
+```
+
+Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it.
 
 ### 6. Start your first feature
 
@@ -121,20 +117,21 @@ alias cc="claude --dangerously-skip-permissions"
 
 ## How the workflow works
 
-### The session loop
+### Ceremony by stakes
+
+`/start-feature` classifies the work and tells you which commands to run. A small tweak is done on the spot; everything else gets a command sequence and stops so you drive each step.
+
+| Tier | When | Flow |
+|---|---|---|
+| Small tweak | ≤2 files, <50 lines, no auth / payments / data / config | edit → `prove-it-works` |
+| Small feature | Clear requirement, one slice | `/grill-me` → `/test` → `prove-it-works` → `/open-pr` |
+| Big / fuzzy | Unclear, or spans several modules | `/grill-me` → `/spec` → `/plan-tasks` → `/to-tickets` → `/build` → `/review-code` → `/open-pr` |
+| Production / security / irreversible | Auth, payments, migrations, deploys | Big flow + `/doubt-driven-development` + `security-and-hardening` + `/ship` go/no-go before `/open-pr` |
+
+### After the PR
 
 ```
-New session
-    ↓
-/start-feature [issue]            load context, check git, plan
-    ↓
-Plan Mode review                  you approve before any code is written
-    ↓
-Implementation                    hooks auto-run prettier + eslint + tsc on every save
-    ↓
-/review                           multi-perspective review, prioritized findings
-    ↓
-/ship                             quality gate → commit → push → open PR
+/open-pr                          quality gate → constraint guard → commit → push → PR
     ↓
 CI runs automatically             lint + typecheck + test + build
     ↓
@@ -155,7 +152,7 @@ Every session feeds the next one. When Claude makes a mistake:
 
 1. Fix the problem in this session
 2. Document it in `docs/learnings.md`
-3. Extract a rule and add it to `CLAUDE.md` or `docs/constraints.md`
+3. Extract a rule and add it to `CLAUDE.md` or `CONSTRAINTS.md`
 4. Commit: `docs: add constraint for [what you learned]`
 
 The whole team benefits immediately — Claude won't repeat that mistake.
@@ -164,17 +161,23 @@ The whole team benefits immediately — Claude won't repeat that mistake.
 
 ## Command reference
 
-| Command | What it does |
-|---|---|
-| `/start-feature [desc]` | Load context, verify git, plan and get approval before starting |
-| `/grill [design]` | Technical interrogation — expose design blindspots before coding |
-| `/review` | Multi-perspective code review, findings written to docs/todos/ |
-| `/handoff` | Save session state to docs/progress.md before stopping |
-| `/ship` | Quality gate → commit → push → open PR |
-| `/lfg [desc]` | Full automated loop: plan → implement → test → review → ship |
-| `/clear` | Reset context window — run before each new feature |
-| `/compact` | Summarize and compress context when above 80% |
-| `/context` | Inspect context usage — find what's consuming tokens |
+| Command | What it does | From |
+|---|---|---|
+| `/start-feature [desc]` | Classify stakes, then do the tweak or print the command sequence | scaffold |
+| `/grill-me` | Interview you round by round until the design has no open branches | Matt |
+| `/spec` | Write `SPEC.md` before any code | Addy |
+| `/plan-tasks` | Break the spec into small, verifiable tasks in `tasks/plan.md` | Addy |
+| `/to-tickets` | Publish each plan task as a GitHub issue with blocking edges | Matt |
+| `/build` / `/build auto` | Implement the next task (or every task after one approval), test-first | Addy |
+| `/test` | TDD for features; prove-it pattern for bugs | Addy |
+| `/review-code` | Five-axis review: correctness, readability, architecture, security, performance | Addy |
+| `/code-simplify` | Reduce complexity without changing behavior | Addy |
+| `/constraints` | Set the quality bar (`CONSTRAINTS.md`); `guard` checks a diff against it | Addy |
+| `/ship` | Parallel review by three personas → go/no-go with a rollback plan | Addy |
+| `/open-pr [issue]` | Gate, commit, push, and open a PR that closes its issue | scaffold |
+| `/handoff` | Save session state to `docs/progress.md` before stopping | scaffold |
+
+`/plan` and `/review` are Claude Code built-ins (plan mode and `/code-review`), which is why Addy's commands are renamed here. To pull newer upstream versions, bump the SHA in `.claude/VENDORED.md` and run `scripts/sync-upstream.sh`.
 
 ---
 
@@ -187,7 +190,7 @@ feature/[N]-[desc] your working branch — lives 1–3 days, one issue per branc
 
 **Branch naming**: `feature/42-google-oauth`, `fix/87-redirect-loop`, `chore/update-deps`
 
-**Commit format**: `feat(auth): add Google OAuth login` — Conventional Commits, enforced by the commit agent
+**Commit format**: `feat(auth): add Google OAuth login` — Conventional Commits, applied by `/open-pr`
 
 **Merge strategy**: Squash and Merge — keeps main history clean and readable
 
@@ -201,7 +204,7 @@ When a new developer joins:
 
 1. Clone the repo
 2. Copy `.env.example` → `.env.local` and fill in values
-3. Read `CLAUDE.md`, `docs/constraints.md`, `docs/architecture.md`, and `docs/git-workflow.md`
+3. Read `CLAUDE.md`, `CONSTRAINTS.md`, `docs/decisions/`, and `docs/git-workflow.md`
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
 5. Start from the project root: `claude --dangerously-skip-permissions`
 6. Pick up an issue: `/start-feature [issue number or description]`
@@ -212,31 +215,36 @@ When a new developer joins:
 
 **Week 1 — Foundations**
 - [ ] Fill in `CLAUDE.md` placeholders for your project
-- [ ] Add project-specific constraints to `docs/constraints.md`
-- [ ] Get comfortable with Plan Mode (Shift+Tab twice)
+- [ ] Run `/constraints` and `/run-skill-generator`
+- [ ] Use `/start-feature` for every change and follow the tier it picks
 - [ ] Use `/clear` before every new feature
-- [ ] Ship your first PR with `/ship`
+- [ ] Ship your first PR with `/open-pr`
 
 **Week 2 — Team workflow**
 - [ ] Confirm CI is running on every PR (`ci.yml`)
 - [ ] Configure and test staging deploy (`deploy-staging.yml`)
 - [ ] Install the Claude GitHub App for automatic PR review
-- [ ] Use `/start-feature` consistently as your session opener
+- [ ] Run a Big-tier feature end to end: `/spec` → `/plan-tasks` → `/to-tickets` → `/build`
 - [ ] Start logging bugs to `docs/learnings.md`
 
 **Week 3+ — Advanced**
-- [ ] Use `prd-to-issues` skill to slice epics into vertical issues
-- [ ] Configure Playwright MCP for automated UI verification
-- [ ] Enable production deploy with approval gate (`deploy-production.yml`)
-- [ ] Run `improve-arch` monthly for architecture reviews
-- [ ] Try `/lfg` for the full one-command loop
+- [ ] Try `/build auto` once a spec and plan exist
+- [ ] Configure Playwright or Chrome DevTools MCP for UI verification
+- [ ] Enable production deploy with approval gate (`deploy-production.yml`) and gate it with `/ship`
+- [ ] Sync upstream skills with `scripts/sync-upstream.sh`
 
 ---
 
 ## Design decisions
 
 **Why `--dangerously-skip-permissions`?**
-Prevents Claude from pausing to ask permission for safe, expected operations like running eslint or tsc. Truly dangerous commands are blocked in `.claude/settings.json`. Add anything you always want to allow to the `permissions.allow` list there.
+Prevents Claude from pausing to ask permission for safe, expected operations like running eslint or tsc. Destructive commands (`rm -rf`, force pushes) are denied in `.claude/settings.json`. Add anything you always want to allow to the `permissions.allow` list there.
+
+**Why ceremony by stakes?**
+A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.
+
+**Why vendor skills instead of installing plugins?**
+Only the skills with a caller in this workflow are copied, pinned to a commit, and kept consistent with each other (renamed commands, shared paths). Installing the full packs would add dozens of overlapping skills that compete to trigger. Don't also install these packs as plugins, or every skill appears twice.
 
 **Why trunk-based development?**
 Short-lived branches mean small, reviewable PRs. Each Claude session maps cleanly to one branch and one issue — context stays clean and reviews stay focused.
@@ -245,13 +253,15 @@ Short-lived branches mean small, reviewable PRs. Each Claude session maps cleanl
 Each merge to `main` produces one commit with a Conventional Commits message matching the PR title. The history stays readable and tooling like release-please can parse it automatically.
 
 **Why write tests before implementation?**
-Claude Code tends to write tests that match its own implementation. PRD-first tests reflect actual requirements, catch different bugs, and survive refactors better.
+Claude Code tends to write tests that match its own implementation. Spec-first tests reflect actual requirements, catch different bugs, and survive refactors better.
 
 ---
 
 ## References
 
 - [Claude Code documentation](https://docs.anthropic.com/claude-code)
-- [Claude Code official plugins](https://github.com/anthropics/claude-code-plugins)
+- [Addy Osmani — agent-skills](https://github.com/addyosmani/agent-skills)
+- [Matt Pocock — skills](https://github.com/mattpocock/skills)
+- [pstack](https://github.com/cursor/plugins/tree/main/pstack)
 - [Compound Engineering — Kieran Klaassen](https://every.to/superorganizers/compound-engineering)
 - [Conventional Commits specification](https://www.conventionalcommits.org)
