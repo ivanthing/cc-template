@@ -47,7 +47,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
     ├── workflows/
     │   ├── ci.yml                     # Lint + type check + test + build on every push
     │   ├── template-checks.yml        # Runs scripts/check-skills.sh (no Node needed)
-    │   ├── claude-review.yml          # Claude reviews same-repo PRs (needs the App + key)
+    │   ├── claude-review.yml          # Claude reviews same-repo PRs (needs the App + a token)
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
     ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
@@ -65,7 +65,7 @@ Click **"Use this template"** on the repository page. GitHub creates a new repo 
 
 **Option B — Clone and reset**
 ```bash
-git clone https://github.com/[YOUR_USERNAME]/claude-code-template.git my-project
+git clone https://github.com/ivanthing/cc-template.git my-project
 cd my-project
 rm -rf .git && git init
 ```
@@ -85,7 +85,9 @@ rm -rf .git && git init
 5. **Run `/run-skill-generator` once there is an app to run.** It generates a project-specific script to launch your app, which `prove-it-works` uses.
 6. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
 7. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. `claude-review.yml` fails on every PR until configured; the deploy workflows skip their deploy steps with a notice until `VERCEL_TOKEN` is set:
-   - `claude-review.yml` (runs on every same-repo PR; fork PRs skip it): run `/install-github-app` and `gh secret set ANTHROPIC_API_KEY`, or delete the file. If `/install-github-app` offers to add its own code-review workflow, decline it, or every PR gets reviewed twice.
+   - `claude-review.yml` (runs on every same-repo PR; fork PRs skip it): install the [Claude GitHub App](https://github.com/apps/claude) on the repo (or run `/install-github-app`; if it offers to add its own code-review workflow, decline it, or every PR gets reviewed twice). Then pick one way to authenticate, or delete the file:
+     - **Personal or small-team repo:** run `claude setup-token` and `gh secret set CLAUDE_CODE_OAUTH_TOKEN`. Reviews run on your Claude subscription, with no separate API billing. This is what the workflow uses as shipped.
+     - **Shared team repo:** `gh secret set ANTHROPIC_API_KEY`, and in `claude-review.yml` swap `claude_code_oauth_token` for the commented `anthropic_api_key` line. An OAuth token is tied to the personal subscription of whoever generated it, so Anthropic recommends an API key for repos many people use.
    - `deploy-staging.yml` (runs on every push to `main`) and `deploy-production.yml` (manual trigger): replace the Vercel step with your platform's deploy, add their secrets in **GitHub → Settings → Secrets and variables → Actions**, and for production create a GitHub Environment named `production` with required reviewers. Or delete them until you deploy.
 
 ### 3. Start your first feature
