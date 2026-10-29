@@ -169,7 +169,7 @@ Runs `scripts/check-skills.sh` and lints the workflows with actionlint. Needs no
 See `.github/workflows/template-checks.yml`
 
 #### 3. `claude-review.yml` — Runs on every same-repo PR
-Claude reviews the PR for bugs and security issues. Needs the Claude GitHub App and the `ANTHROPIC_API_KEY` secret; delete it if you don't use it.
+Claude reviews the PR for bugs and security issues. Needs the Claude GitHub App and either a `CLAUDE_CODE_OAUTH_TOKEN` (personal subscription, the default) or an `ANTHROPIC_API_KEY` (shared team repos) secret; see README step 7. Delete it if you don't use it.
 See `.github/workflows/claude-review.yml`
 
 #### 4. `deploy-staging.yml` — Runs on merge to main

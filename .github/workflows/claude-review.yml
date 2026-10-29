@@ -24,7 +24,9 @@ jobs:
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1.0.264
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Subscription token from `claude setup-token`. For a shared team repo, use
+          # anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }} instead (README, step 7).
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # Only report bugs and security issues -- not style preferences
           prompt: |
             REPO: ${{ github.repository }}
