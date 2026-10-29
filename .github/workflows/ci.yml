@@ -10,6 +10,8 @@ jobs:
   quality:
     name: Lint, Type Check & Test
     runs-on: ubuntu-latest
+    # Skip until the project has a lockfile (e.g. the bare template repo).
+    if: hashFiles('package-lock.json') != ''
 
     steps:
       - name: Checkout
