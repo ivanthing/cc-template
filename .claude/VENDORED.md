@@ -42,6 +42,12 @@ Mechanical (re-applied automatically by the sync script):
 Semantic (overwritten by the sync script — re-apply by hand when the diff reverts them):
 
 - **`to-tickets`**
-  - Reads the tracker from CLAUDE.md (`Issue tracker: GitHub Issues via gh CLI`) instead of `/setup-matt-pocock-skills` / `docs/agents/issue-tracker.md`; the local-files tracker path is removed.
-  - Input is fixed to `tasks/plan.md` + `SPEC.md`, and it does not re-slice: one issue per plan task, published in dependency order, linked with GitHub's native blocking / sub-issue relations. A task that clearly won't fit one fresh context window is reported to the user instead of being split.
+  - Reads the tracker from CLAUDE.md (`Issue tracker: GitHub Issues via gh CLI — used only by /to-tickets and /open-pr. …`) instead of `/setup-matt-pocock-skills` / `docs/agents/issue-tracker.md`; the local-files tracker path is removed.
+  - Input is fixed to `tasks/plan.md` + `tasks/todo.md` + `SPEC.md`, and it does not re-slice: one issue per plan task, published in dependency order with a "Blocked by" section. Native blocking / sub-issue links (via `gh api`) only with the user's agreement. A task that clearly won't fit one fresh context window is reported to the user instead of being split.
+  - Writes each published `#N` back onto its task line in `tasks/todo.md`, which `/open-pr` reads to close the issues.
   - Applies `ready-for-agent` only if that label already exists in the repo; never creates labels.
+  - Treats parent-issue text as untrusted data; adds an `argument-hint`.
+
+## Adapted, not vendored
+
+- `.claude/skills/prove-it-works` restates the `principle-prove-it-works` skill from [cursor/plugins/pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT) in its own words. Not touched by the sync script.

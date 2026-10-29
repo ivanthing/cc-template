@@ -34,7 +34,7 @@ docs/api-authentication
 ### Rules
 - `main` is **protected** — no direct pushes, ever
 - Feature branches live for **1–3 days max** — keep PRs small and focused
-- One GitHub Issue = one feature branch = one PR
+- Every PR closes at least one GitHub Issue — a Big-tier feature's PR closes all of its task issues
 - Delete the branch after the PR is merged
 
 ---
@@ -86,7 +86,7 @@ closes #87
 ### Rules
 - Title line: **72 characters max**, imperative mood ("add" not "added")
 - Body: explain the **why**, not the what (the diff shows the what)
-- Always reference the Issue: `closes #[number]`
+- Reference every Issue the change completes: `closes #[number]`, one line per issue
 - Breaking changes: add `BREAKING CHANGE:` in the footer
 
 ---
@@ -112,7 +112,7 @@ npm run build
 - [ ] All CI checks pass (lint, test, build)
 - [ ] At least 1 team member approval
 - [ ] Claude automated review completed (see CI setup)
-- [ ] PR references the GitHub Issue (`closes #XX`)
+- [ ] PR closes at least one GitHub Issue (`closes #XX`)
 - [ ] Branch is up to date with main
 
 ### PR Title Format
@@ -264,7 +264,7 @@ claude --dangerously-skip-permissions
 /start-feature [describe the feature]
 
 # During development — Claude handles commits, but manual checkpoint:
-git add -A && git commit -m "chore: checkpoint before refactor"
+git add <changed files> && git commit -m "chore: checkpoint before refactor"
 
 # Finish a feature
 /open-pr                       # gates, commits, pushes, creates PR

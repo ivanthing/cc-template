@@ -25,7 +25,8 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 │   ├── git-workflow.md                # Team Git, CI/CD, and deploy guide
 │   └── decisions/                     # Architecture decision records (ADRs)
 ├── scripts/
-│   └── sync-upstream.sh               # Re-vendor skills at the pinned upstream commits
+│   ├── sync-upstream.sh               # Re-vendor skills at the pinned upstream commits
+│   └── check-skills.sh                # Integrity checks for .claude/ (run in CI)
 ├── src/
 │   └── CLAUDE.md                      # Directory-level rules for src/
 ├── .claude/
@@ -45,6 +46,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 └── .github/
     ├── workflows/
     │   ├── ci.yml                     # Lint + type check + test + build on every push
+    │   ├── template-checks.yml        # Runs scripts/check-skills.sh (no Node needed)
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
     │   └── deploy-production.yml      # Manual-trigger production deploy with approval gate
     ├── ISSUE_TEMPLATE/                # Feature and bug issue templates
@@ -105,7 +107,7 @@ Then run these once per project:
 /constraints             # writes CONSTRAINTS.md, the quality bar /open-pr guards
 ```
 
-Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it.
+Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
 
 ### 6. Start your first feature
 
@@ -119,14 +121,16 @@ Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/
 
 ### Ceremony by stakes
 
-`/start-feature` classifies the work and tells you which commands to run. A small tweak is done on the spot; everything else gets a command sequence and stops so you drive each step.
+`/start-feature` first moves you off `main` onto a feature branch, then classifies the work. A small tweak is done on the spot (after you confirm the diff, if it came from an issue); everything else gets a command sequence and stops so you drive each step. The table lives in `CLAUDE.md`:
 
 | Tier | When | Flow |
 |---|---|---|
-| Small tweak | ≤2 files, <50 lines, no auth / payments / data / config | edit → `prove-it-works` |
-| Small feature | Clear requirement, one slice | `/grill-me` → `/test` → `prove-it-works` → `/open-pr` |
-| Big / fuzzy | Unclear, or spans several modules | `/grill-me` → `/spec` → `/plan-tasks` → `/to-tickets` → `/build` → `/review-code` → `/open-pr` |
-| Production / security / irreversible | Auth, payments, migrations, deploys | Big flow + `/doubt-driven-development` + `security-and-hardening` + `/ship` go/no-go before `/open-pr` |
+| Small tweak | ≤2 files, <50 lines, and no auth / payments / data access / config / env | Make the change → `prove-it-works` → `/open-pr` |
+| Small feature | Clear requirement, one slice | `/grill-me` → `/test` → `/open-pr` |
+| Big / fuzzy | Unclear requirement, or spans several modules | `/grill-me` → `/spec` → `/plan-tasks` → `/to-tickets` → `/build` (or `/build auto`) → `/review-code` → `/open-pr` |
+| Production / security / irreversible | Auth, payments, data migrations, deploys, or anything `git revert` can't undo | The Big flow, plus `/doubt-driven-development` and the `security-and-hardening` skill; run `/ship` for a go/no-go before `/open-pr` |
+
+In the Big tier, `/to-tickets` turns each task in `tasks/todo.md` into a GitHub issue and writes its `#N` back onto the task line; `/open-pr` then closes every issue the branch delivered in one PR.
 
 ### After the PR
 
@@ -174,7 +178,7 @@ The whole team benefits immediately — Claude won't repeat that mistake.
 | `/code-simplify` | Reduce complexity without changing behavior | Addy |
 | `/constraints` | Set the quality bar (`CONSTRAINTS.md`); `guard` checks a diff against it | Addy |
 | `/ship` | Parallel review by three personas → go/no-go with a rollback plan | Addy |
-| `/open-pr [issue]` | Gate, commit, push, and open a PR that closes its issue | scaffold |
+| `/open-pr [issues]` | Gate, commit, push, and open a PR that closes its issues | scaffold |
 | `/handoff` | Save session state to `docs/progress.md` before stopping | scaffold |
 
 `/plan` and `/review` are Claude Code built-ins (plan mode and `/code-review`), which is why Addy's commands are renamed here. To pull newer upstream versions, bump the SHA in `.claude/VENDORED.md` and run `scripts/sync-upstream.sh`.
@@ -185,7 +189,7 @@ The whole team benefits immediately — Claude won't repeat that mistake.
 
 ```
 main               protected, always deployable, auto-deploys to staging on merge
-feature/[N]-[desc] your working branch — lives 1–3 days, one issue per branch
+feature/[N]-[desc] your working branch — lives 1–3 days, its PR closes at least one issue
 ```
 
 **Branch naming**: `feature/42-google-oauth`, `fix/87-redirect-loop`, `chore/update-deps`
@@ -238,7 +242,11 @@ When a new developer joins:
 ## Design decisions
 
 **Why `--dangerously-skip-permissions`?**
-Prevents Claude from pausing to ask permission for safe, expected operations like running eslint or tsc. Destructive commands (`rm -rf`, force pushes) are denied in `.claude/settings.json`. Add anything you always want to allow to the `permissions.allow` list there.
+Prevents Claude from pausing to ask permission for safe, expected operations like running eslint or tsc. In this mode the `deny` list in `.claude/settings.json` is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
+- **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
+- **A sandbox** for unattended runs: `/sandbox`, a devcontainer, or a disposable VM.
+
+If you don't have both, run with `--permission-mode acceptEdits` instead, so shell commands outside the `allow` list still ask first.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.
@@ -247,7 +255,7 @@ A one-line fix doesn't need a spec, and an auth change shouldn't ship without on
 Only the skills with a caller in this workflow are copied, pinned to a commit, and kept consistent with each other (renamed commands, shared paths). Installing the full packs would add dozens of overlapping skills that compete to trigger. Don't also install these packs as plugins, or every skill appears twice.
 
 **Why trunk-based development?**
-Short-lived branches mean small, reviewable PRs. Each Claude session maps cleanly to one branch and one issue — context stays clean and reviews stay focused.
+Short-lived branches mean small, reviewable PRs. Each Claude session maps cleanly to one branch and one PR — context stays clean and reviews stay focused.
 
 **Why Squash and Merge?**
 Each merge to `main` produces one commit with a Conventional Commits message matching the PR title. The history stays readable and tooling like release-please can parse it automatically.
