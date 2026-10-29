@@ -74,19 +74,19 @@ rm -rf .git && git init
 
 1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else.
 2. **Make the toolchain runnable**: `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
-3. **Run `/run-skill-generator`** inside Claude Code. It generates a project-specific script to launch your app, which `prove-it-works` uses.
-4. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
-5. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. The others fail on every run until configured:
-   - `claude-review.yml` (runs on every PR): run `/install-github-app` inside Claude Code and `gh secret set ANTHROPIC_API_KEY`, or delete the file.
+3. **Put the repo on GitHub.** Option A already did; after Option B, create the repo and push (`gh repo create --source . --private --push`). `/to-tickets`, `/open-pr` and step 7 need the remote.
+4. **Start Claude Code** from the project root:
+
+   ```bash
+   claude
+   ```
+
+   The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so those run without prompts; ad-hoc verification commands (`curl`, a run script, `gh api`) still ask. See [Design decisions](#design-decisions) before reaching for `--dangerously-skip-permissions`.
+5. **Run `/run-skill-generator` once there is an app to run.** It generates a project-specific script to launch your app, which `prove-it-works` uses.
+6. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
+7. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. The others fail on every run until configured:
+   - `claude-review.yml` (runs on every same-repo PR; fork PRs skip it): run `/install-github-app` and `gh secret set ANTHROPIC_API_KEY`, or delete the file. If `/install-github-app` offers to add its own code-review workflow, decline it, or every PR gets reviewed twice.
    - `deploy-staging.yml` (runs on every push to `main`) and `deploy-production.yml` (manual trigger): replace the Vercel step with your platform's deploy, add their secrets in **GitHub → Settings → Secrets and variables → Actions**, and for production create a GitHub Environment named `production` with required reviewers. Or delete them until you deploy.
-
-Then start Claude Code:
-
-```bash
-claude
-```
-
-The default permission mode is enough: the `allow` list in `.claude/settings.json` covers every command the workflow runs, and in testing the full Small tweak and Big flows finished with zero permission prompts. See [Why the default permission mode?](#design-decisions) before reaching for `--dangerously-skip-permissions`.
 
 ### 3. Start your first feature
 
@@ -198,7 +198,7 @@ When a new developer joins:
 
 **Week 1 — Foundations**
 - [ ] Fill in `CLAUDE.md` placeholders for your project
-- [ ] Run `/constraints` and `/run-skill-generator`
+- [ ] Run `/run-skill-generator` once the app runs, and `/constraints` once there is real code
 - [ ] Use `/start-feature` for every change and follow the tier it picks
 - [ ] Use `/clear` before every new feature
 - [ ] Ship your first PR with `/open-pr`
@@ -206,7 +206,7 @@ When a new developer joins:
 **Week 2 — Team workflow**
 - [ ] Confirm CI is running on every PR (`ci.yml`)
 - [ ] Configure and test staging deploy (`deploy-staging.yml`)
-- [ ] Install the Claude GitHub App for automatic PR review
+- [ ] If you kept `claude-review.yml`, confirm Claude reviews every PR
 - [ ] Run a Big-tier feature end to end: `/spec` → `/plan-tasks` → `/to-tickets` → `/build`
 - [ ] Start logging bugs to `docs/learnings.md`
 
@@ -221,11 +221,11 @@ When a new developer joins:
 ## Design decisions
 
 **Why the default permission mode?**
-The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs the whole flow without prompts, and anything outside the list still asks first. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
+The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs those steps without prompts, and anything outside the list (ad-hoc verification such as `curl` or `gh api`) still asks first. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
 - **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
 - **A sandbox**: `/sandbox`, a devcontainer, or a disposable VM.
 
-Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. Neither the `deny` list nor `acceptEdits` is a sandbox; for untrusted input (issues, fetched docs) use the default permission mode or `/sandbox`.
+Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. The default mode is not a boundary either: the `allow` list auto-approves commands that can run code or upload files (`npm run`, `git fetch`/`git rebase`, `gh issue create`), and the `Read` deny rules do not stop a shell command from reading `.env` files. Neither the `deny` list, `acceptEdits`, nor the default mode with this `allow` list is a sandbox; for untrusted input (issues from outside contributors, fetched docs) run inside `/sandbox` or a devcontainer with no production credentials.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.

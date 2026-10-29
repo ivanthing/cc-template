@@ -111,7 +111,7 @@ npm run build
 ### PR Requirements (enforced via GitHub branch protection)
 - [ ] All CI checks pass (lint, test, build)
 - [ ] At least 1 team member approval
-- [ ] Claude automated review completed (see CI setup)
+- [ ] Claude automated review completed (only if you kept `claude-review.yml`; see GitHub Actions Workflows)
 - [ ] PR closes at least one GitHub Issue (`closes #XX`)
 - [ ] Branch is up to date with main
 
@@ -122,7 +122,7 @@ Same as commit title: `feat(auth): add Google OAuth login`
 See `.github/pull_request_template.md` — it's auto-populated when you open a PR, and matches the body `/open-pr` writes (Summary / Evidence / Merge Danger).
 
 ### Review Process
-1. **Automated review** (Claude GitHub App) — runs immediately on PR open
+1. **Automated review** (Claude GitHub App, if you kept `claude-review.yml`) — runs on every same-repo PR; fork PRs skip it
    - Checks for bugs and security vulnerabilities
    - Does NOT comment on style (the prompt is in `.github/workflows/claude-review.yml`)
 2. **Team review** — at least one approval required
@@ -161,14 +161,22 @@ Push to any branch
 ### GitHub Actions Workflows
 
 #### 1. `ci.yml` — Runs on every push and PR
-Checks: lint → type check → tests → build
+Checks: lint → type check → tests → build (skipped until `package-lock.json` exists)
 See `.github/workflows/ci.yml`
 
-#### 2. `deploy-staging.yml` — Runs on merge to main
+#### 2. `template-checks.yml` — Runs on every push and PR
+Runs `scripts/check-skills.sh` and lints the workflows with actionlint. Needs no Node.
+See `.github/workflows/template-checks.yml`
+
+#### 3. `claude-review.yml` — Runs on every same-repo PR
+Claude reviews the PR for bugs and security issues. Needs the Claude GitHub App and the `ANTHROPIC_API_KEY` secret; delete it if you don't use it.
+See `.github/workflows/claude-review.yml`
+
+#### 4. `deploy-staging.yml` — Runs on merge to main
 Deploys automatically to the staging environment.
 See `.github/workflows/deploy-staging.yml`
 
-#### 3. `deploy-production.yml` — Manual trigger only
+#### 5. `deploy-production.yml` — Manual trigger only
 Requires explicit team lead approval via GitHub Actions manual dispatch.
 See `.github/workflows/deploy-production.yml`
 
@@ -245,9 +253,9 @@ When you discover a pattern Claude keeps getting wrong:
 ### Onboarding a New Team Member
 1. Clone the repo
 2. Copy `.env.example` → `.env.local` and fill in values
-3. Read `CLAUDE.md`, `CONSTRAINTS.md`, and `docs/decisions/`
+3. Read `CLAUDE.md`, `CONSTRAINTS.md`, `docs/decisions/`, and this file
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
-5. Run: `claude` from the project root. The default permission mode is enough: the `allow` list in `.claude/settings.json` covers the whole workflow without prompts. Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox (see README → Design decisions).
+5. Run: `claude` from the project root. The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps; ad-hoc verification commands still ask. Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox (see README → Design decisions).
 6. Start with: `/start-feature [your first issue]`
 
 ---

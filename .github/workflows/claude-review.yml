@@ -7,6 +7,8 @@ on:
 jobs:
   claude-review:
     name: Automated Code Review
+    # Fork PRs get no secrets or OIDC token; skip instead of failing.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -17,15 +19,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@d70510b174a1244958df0b03166a54912811f3e6 # v1.0.264
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Only report bugs and security issues -- not style preferences
-          direct_prompt: |
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
             Review this pull request for bugs and security vulnerabilities only.
             Do NOT comment on code style, naming conventions, or formatting.
             Be concise. Only flag real problems that could affect correctness or security.
             For each issue found, explain: what the problem is, why it matters, and how to fix it.
+            Leave your review with `gh pr comment`; if there are no issues, say so briefly.
+          claude_args: |
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"

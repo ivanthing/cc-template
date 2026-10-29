@@ -25,3 +25,8 @@ jobs:
 
       - name: Check skills, commands, agents and settings
         run: scripts/check-skills.sh
+
+      - name: Lint GitHub workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color

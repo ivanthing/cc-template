@@ -10,30 +10,41 @@ jobs:
   quality:
     name: Lint, Type Check & Test
     runs-on: ubuntu-latest
-    # Skip until the project has a lockfile (e.g. the bare template repo).
-    if: hashFiles('package-lock.json') != ''
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Skip the rest until the project has a lockfile (e.g. the bare template repo).
+      # hashFiles() is not allowed in a job-level if, so the check is a step.
+      - name: Check for lockfile
+        id: lock
+        run: |
+          if [ -f package-lock.json ]; then echo "has=1" >> "$GITHUB_OUTPUT"; else echo "No package-lock.json; skipping."; fi
+
       - name: Setup Node.js
+        if: steps.lock.outputs.has == '1'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.lock.outputs.has == '1'
         run: npm ci
 
       - name: Lint
+        if: steps.lock.outputs.has == '1'
         run: npm run lint
 
       - name: Type check
+        if: steps.lock.outputs.has == '1'
         run: npx tsc --noEmit
 
       - name: Run tests
+        if: steps.lock.outputs.has == '1'
         run: npm run test -- --coverage
 
       - name: Build
+        if: steps.lock.outputs.has == '1'
         run: npm run build
