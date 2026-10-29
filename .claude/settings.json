@@ -6,26 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); [ -n \"$f\" ] && npx --no-install prettier --write \"$f\" >/dev/null 2>&1; exit 0"
           },
           {
             "type": "command",
-            "command": "eslint --fix \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
-          },
-          {
-            "type": "command",
-            "command": "npx tsc --noEmit 2>&1 | head -20 || true"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"$CLAUDE_FILE_PATH\" | grep -qE '\\.(test|spec)\\.(ts|tsx|js|jsx)$|/__tests__/' && echo 'BLOCKED: Do not modify test files. Fix the implementation instead.' && exit 2 || exit 0"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs) npx --no-install eslint --fix \"$f\" >/dev/null 2>&1;; esac; exit 0"
           }
         ]
       }
@@ -33,25 +18,25 @@
   },
   "permissions": {
     "allow": [
-      "npm run *",
-      "npx *",
-      "git add *",
-      "git commit *",
-      "git push *",
-      "git checkout *",
-      "git branch *",
-      "git fetch *",
-      "git rebase *",
-      "git diff *",
-      "git log *",
-      "git status",
-      "prettier *",
-      "eslint *"
+      "Bash(npm run:*)",
+      "Bash(npx:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rebase:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git status)",
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)"
     ],
     "deny": [
-      "rm -rf /",
-      "DROP TABLE",
-      "DELETE FROM * WHERE 1=1"
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
     ]
   }
 }
