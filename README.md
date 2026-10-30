@@ -1,7 +1,9 @@
-# Claude Code Vibe Coding Template
+# Claude Code Team Workflow Template
 
-A production-ready Claude Code workflow template for teams.
+A Claude Code workflow template for teams: spec first, tests before code, proof that it works before a PR, and as much ceremony as the stakes call for.
 Clone it, fill in the placeholders, and you're ready to build.
+
+> Assumes GitHub, npm and TypeScript; the deploy workflows target Vercel and are replaceable. `src/CLAUDE.md` assumes Next.js.
 
 Synthesized from Anthropic's official best practices, Boris Cherny's (Claude Code creator) workflow, Kieran Klaassen's Compound Engineering philosophy, and three curated skill packs:
 
@@ -18,11 +20,13 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 ```
 .
 ├── CLAUDE.md                          # Global rules + the ceremony-by-stakes table
+├── LICENSE                            # MIT for this template; replace with your own
 ├── THIRD_PARTY_LICENSES.md            # Licenses of the vendored skill packs
 ├── docs/
 │   ├── progress.md                    # Cross-session state handoff
 │   ├── learnings.md                   # Error → rule log (Compound Engineering)
 │   ├── git-workflow.md                # Team Git, CI/CD, and deploy guide
+│   ├── permissions.md                 # What the allow/deny lists do and don't protect
 │   └── decisions/                     # Architecture decision records (ADRs)
 ├── scripts/
 │   ├── sync-upstream.sh               # Re-vendor skills at the pinned upstream commits
@@ -45,7 +49,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 │       └── …                          # 16 lifecycle skills (Addy), see .claude/VENDORED.md
 └── .github/
     ├── workflows/
-    │   ├── ci.yml                     # Lint + type check + test + build on every push
+    │   ├── ci.yml                     # Lint + type check + test + build on every PR
     │   ├── template-checks.yml        # Runs scripts/check-skills.sh (no Node needed)
     │   ├── claude-review.yml          # Claude reviews same-repo PRs (needs the App + a token)
     │   ├── deploy-staging.yml         # Auto-deploy to staging on merge to main
@@ -72,7 +76,7 @@ rm -rf .git && git init
 
 ### 2. Initialize the project, in this order
 
-1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else.
+1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else. Replace `LICENSE` with your own: it is the template's MIT license with PurpleCow as the copyright holder.
 2. **Make the toolchain runnable**: `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
 3. **Put the repo on GitHub.** Option A already did (clone it to work locally). After Option B, make the initial commit on `main` and push it: `git add -A && git commit -m "chore: initial commit from template" && gh repo create --source . --private --push`. This one commit is the only exception to the never-commit-to-`main` rule. `/to-tickets`, `/open-pr` and step 7 need the remote.
 4. **Start Claude Code** from the project root:
@@ -81,7 +85,7 @@ rm -rf .git && git init
    claude
    ```
 
-   The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so those run without prompts; ad-hoc verification commands (`curl`, a run script, `gh api`) still ask when run directly. See [Design decisions](#design-decisions) before reaching for `--dangerously-skip-permissions`.
+   The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so those run without prompts; ad-hoc verification commands (`curl`, a run script, `gh api`) still ask when run directly. See [Why the default permission mode?](#design-decisions) and [docs/permissions.md](docs/permissions.md) before reaching for `--dangerously-skip-permissions`.
 5. **Run `/run-skill-generator` once there is an app to run.** It generates a project-specific script to launch your app, which `prove-it-works` uses.
 6. **Run `/constraints` once there is real code.** It writes `CONSTRAINTS.md`, the quality bar `/open-pr` guards, by ratcheting from what the code measures today, plus `check:*` npm scripts; CI runs `check:full`, which is where coverage is enforced. On an empty repo that baseline is meaningless (a one-line baseline gives a 99.5% coverage threshold). If you run it early anyway, edit the thresholds to sensible values by hand; the guard flags any loosening, so say in the commit message that a human approved it.
 7. **Configure or delete the GitHub workflows that need secrets.** `ci.yml` and `template-checks.yml` work as they are. `claude-review.yml` fails on every PR until configured; the deploy workflows skip their deploy steps with a notice until `VERCEL_TOKEN` is set:
@@ -95,6 +99,8 @@ rm -rf .git && git init
 ```
 /start-feature [your first issue or feature description]
 ```
+
+For day-to-day work in your first week you only need four commands: `/start-feature`, `/grill-me`, `/test` and `/open-pr`. `/start-feature` tells you when a change needs any of the others.
 
 ---
 
@@ -177,7 +183,7 @@ feature/[N]-[desc] your working branch — lives 1–3 days, its PR closes at le
 
 **Commit format**: `feat(auth): add Google OAuth login` — Conventional Commits, applied by `/open-pr`
 
-**Merge strategy**: Squash and Merge — keeps main history clean and readable
+**Merge strategy**: Merge commit for Big-tier PRs (keeps one commit per task); Squash and Merge for Small tweaks and Small features. `/open-pr` says which one when it opens the PR.
 
 Full details in `docs/git-workflow.md`.
 
@@ -199,10 +205,8 @@ When a new developer joins:
 ## Maturity path
 
 **Week 1 — Foundations**
-- [ ] Fill in `CLAUDE.md` placeholders for your project
-- [ ] Run `/run-skill-generator` once the app runs, and `/constraints` once there is real code
-- [ ] Use `/start-feature` for every change and follow the tier it picks
-- [ ] Use `/clear` before every new feature
+- [ ] Finish the one-time setup in [Quick start step 2](#2-initialize-the-project-in-this-order)
+- [ ] Use only the four day-to-day commands: `/start-feature` for every change, then `/grill-me`, `/test` and `/open-pr` as the tier it picks says
 - [ ] Ship your first PR with `/open-pr`
 
 **Week 2 — Team workflow**
@@ -223,11 +227,12 @@ When a new developer joins:
 ## Design decisions
 
 **Why the default permission mode?**
-The `allow` list in `.claude/settings.json` pre-approves the commands the workflow needs (npm scripts, git branch/commit/push, the `gh` issue and PR calls), so plain `claude` runs those steps without prompts, and anything outside the list (ad-hoc verification such as `curl` or `gh api`) still asks first when run directly. The `deny` list is a tripwire, not a boundary: it matches command prefixes, so variants such as `git push origin main --force` slip past it. The real protection has to live outside the agent:
-- **GitHub branch protection** on `main`: require PRs and reviews, block force pushes and deletion, disallow admin bypass.
-- **A sandbox**: `/sandbox`, a devcontainer, or a disposable VM.
+The `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps, so plain `claude` runs the flow without prompts. The `deny` list is only a tripwire: it matches command prefixes, and neither it, `acceptEdits`, nor the default mode is a sandbox. The real boundary is branch protection plus a sandbox; details and caveats are in [docs/permissions.md](docs/permissions.md).
 
-Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox, and only with branch protection on. It approves everything, so the `deny` list is the only thing left in the way. `--permission-mode acceptEdits` is not a sandbox either: edits are auto-approved, and an edited `package.json` script or lint config runs through `npm run` or the format hook without a prompt, while some allowed commands (`git rebase`, `git fetch`, `git diff`) take flags that run or write arbitrary things. The default mode is not a boundary either: the `allow` list auto-approves commands that can run code or upload files (`npm run`, `npx --no-install -c '<any shell>'`, `git fetch`/`git rebase`, `gh issue create`), and the `Read` deny rules do not stop a shell command from reading `.env` files. Neither the `deny` list, `acceptEdits`, nor the default mode with this `allow` list is a sandbox; for untrusted input (issues from outside contributors, fetched docs) run inside `/sandbox` or a devcontainer with no production credentials.
+What actually protects you:
+- **Branch protection** on `main`: require PRs, block force pushes and deletion.
+- **A sandbox** (`/sandbox`, a devcontainer, a VM) for unattended runs and untrusted input; `--dangerously-skip-permissions` only inside one.
+- **Reviewing the diff**, including `package.json` scripts, lint config and `.claude/`.
 
 **Why ceremony by stakes?**
 A one-line fix doesn't need a spec, and an auth change shouldn't ship without one. Matching process to risk keeps small changes fast and big ones safe.
@@ -238,8 +243,8 @@ Only the skills with a caller in this workflow are copied, pinned to a commit, a
 **Why trunk-based development?**
 Short-lived branches mean small, reviewable PRs. Each Claude session maps cleanly to one branch and one PR — context stays clean and reviews stay focused.
 
-**Why Squash and Merge?**
-Each merge to `main` produces one commit with a Conventional Commits message matching the PR title. The history stays readable and tooling like release-please can parse it automatically.
+**Why a merge commit for Big-tier PRs?**
+`/build auto` makes one commit per task. Keeping them on `main` lets `git bisect` point at the task that broke something, and lets you revert one task without rolling back the whole feature. The cost is a "Merge pull request" commit on `main` for each PR. release-please reads the task commits, so every `/build` commit message must follow Conventional Commits. Small tweaks and Small features are one logical change, so squash them: the PR title becomes the single Conventional commit.
 
 **Why write tests before implementation?**
 Claude Code tends to write tests that match its own implementation. Spec-first tests reflect actual requirements, catch different bugs, and survive refactors better.

@@ -5,9 +5,8 @@ name: Template Checks
 
 on:
   push:
-    branches: ["**"]
-  pull_request:
     branches: [main]
+  pull_request:
 
 permissions:
   contents: read

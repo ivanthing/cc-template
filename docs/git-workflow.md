@@ -131,9 +131,9 @@ See `.github/pull_request_template.md` — it's auto-populated when you open a P
 3. **Author merges** — the PR author clicks Merge after approval
 
 ### Merge Strategy
-- Use **Squash and Merge** to keep main history clean
-- The squash commit message = PR title (which follows Conventional Commits)
-- Never use "Merge commit" — it pollutes the log
+- **Big tier** (the PR closes tasks from `tasks/todo.md`): use **Merge commit**. It keeps the one-commit-per-task history from `/build`, so `git bisect` lands on a task and a single task can be reverted. Every `/build` commit message must follow Conventional Commits, because release-please reads those commits, not the "Merge pull request" commit.
+- **Small tweak and Small feature**: use **Squash and Merge**. The squash commit message = PR title (which follows Conventional Commits).
+- `/open-pr` says which one applies when it opens the PR.
 
 ---
 
@@ -160,11 +160,11 @@ Push to any branch
 
 ### GitHub Actions Workflows
 
-#### 1. `ci.yml` — Runs on every push and PR
+#### 1. `ci.yml` — Runs on every PR and on pushes to main
 Checks: lint → type check → tests → build (skipped until `package-lock.json` exists)
 See `.github/workflows/ci.yml`
 
-#### 2. `template-checks.yml` — Runs on every push and PR
+#### 2. `template-checks.yml` — Runs on every PR and on pushes to main
 Runs `scripts/check-skills.sh` and lints the workflows with actionlint. Needs no Node.
 See `.github/workflows/template-checks.yml`
 
@@ -255,7 +255,7 @@ When you discover a pattern Claude keeps getting wrong:
 2. Copy `.env.example` → `.env.local` and fill in values
 3. Read `CLAUDE.md`, `CONSTRAINTS.md`, `docs/decisions/`, and this file
 4. Install Claude Code: `npm install -g @anthropic-ai/claude-code`
-5. Run: `claude` from the project root. The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps; ad-hoc verification commands still ask. Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox (see README → Design decisions).
+5. Run: `claude` from the project root. The default permission mode is enough: the `allow` list in `.claude/settings.json` pre-approves the workflow's git, gh and npm steps; ad-hoc verification commands still ask. Use `--dangerously-skip-permissions` only inside a devcontainer or another sandbox (see `docs/permissions.md`).
 6. Start with: `/start-feature [your first issue]`
 
 ---

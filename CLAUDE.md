@@ -53,7 +53,7 @@ Enter `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-de
 ## Git & Branching Rules
 - Always work on a feature branch — never commit directly to main
 - Commit before any large refactor as a checkpoint
-- Follow Conventional Commits format (applied by `/open-pr`)
+- Every commit follows Conventional Commits, including each `/build` task commit (Big-tier PRs merge with a merge commit, so release-please reads them)
 - Every PR closes at least one GitHub Issue (a Big-tier feature may span several PRs; each closes the task issues it completed)
 - See `docs/git-workflow.md` for the full team branching strategy
 
