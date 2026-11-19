@@ -1,7 +1,8 @@
 # Learnings Log
 
 > The heart of Compound Engineering.
-> Pattern: error encountered → document it → extract a rule → update CLAUDE.md
+> Pattern: error encountered → document it → prevent it with the cheapest check that works:
+> API/types first, then a lint rule or test with a fix-it message, and only then prose in CLAUDE.md.
 > The more entries here, the smarter Claude Code gets on this codebase.
 
 ---
@@ -12,7 +13,7 @@
 **What happened**: [Describe the problem]
 **Root cause**: [Why did it happen?]
 **Fix**: [How was it resolved?]
-**Rule to add**: [A rule that could go in CLAUDE.md to prevent recurrence]
+**Prevention**: [The API/type change, lint rule or test that now catches it. Prose in CLAUDE.md only if no check can]
 
 ---
 

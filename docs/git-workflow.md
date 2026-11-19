@@ -245,9 +245,9 @@ These files are the team's shared brain that Claude Code loads at session start:
 ### How to Update Team Rules
 When you discover a pattern Claude keeps getting wrong:
 1. Fix the current session manually
-2. Open the relevant file (`CLAUDE.md` or `CONSTRAINTS.md`)
-3. Add the rule in plain English
-4. Commit with: `docs: add constraint for [what you learned]`
+2. Prevent it with the cheapest layer that works: change the API or types so it can't be written; else add a rule to `eslint.config.mjs` (or a test) whose message says what to do instead; only if neither can express it, add a plain-English rule to `CLAUDE.md` or `CONSTRAINTS.md`
+3. Remove other copies of the bad pattern, so agents stop copying it
+4. Commit with: `chore: prevent [what you learned]`
 5. The whole team benefits immediately
 
 ### Onboarding a New Team Member

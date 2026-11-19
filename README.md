@@ -21,6 +21,7 @@ More skills don't make a smarter agent. Each one here has a specific caller, and
 .
 ├── CLAUDE.md                          # Global rules + the ceremony-by-stakes table
 ├── LICENSE                            # MIT for this template; replace with your own
+├── eslint.config.mjs                  # Lint rules with fix-it messages (no any, @ts-ignore, console.log)
 ├── THIRD_PARTY_LICENSES.md            # Licenses of the vendored skill packs
 ├── docs/
 │   ├── progress.md                    # Cross-session state handoff
@@ -77,7 +78,7 @@ rm -rf .git && git init
 ### 2. Initialize the project, in this order
 
 1. **Fill the `CLAUDE.md` placeholders**: `[YOUR_PROJECT_NAME]`, the tech stack, and every Key Command (dev, build, test, lint, type check). While Key Commands are still placeholders, the `/open-pr` quality gate fails and the agent stops to ask. Then rewrite `src/CLAUDE.md` for your stack, or delete it: it is written for a Next.js App Router project (`app/`, `components/`, `@/` imports) and misleads the agent anywhere else. Replace `LICENSE` with your own: it is the template's MIT license with PurpleCow as the copyright holder.
-2. **Make the toolchain runnable**: `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
+2. **Make the toolchain runnable**: install the lint stack `eslint.config.mjs` uses (`npm i -D eslint @eslint/js typescript-eslint typescript`, with `"lint": "eslint ."`), then `npm run test`, `npm run lint` and `npm run build` (or whatever you wrote in Key Commands) must pass on the empty project. Install the [GitHub CLI](https://cli.github.com) (`gh`) — `/to-tickets` and `/open-pr` use it — and `jq`, which the format-on-save hook needs (without it the hook silently does nothing).
 3. **Put the repo on GitHub.** Option A already did (clone it to work locally). After Option B, make the initial commit on `main` and push it: `git add -A && git commit -m "chore: initial commit from template" && gh repo create --source . --private --push`. This one commit is the only exception to the never-commit-to-`main` rule. `/to-tickets`, `/open-pr` and step 7 need the remote.
 4. **Start Claude Code** from the project root:
 
@@ -143,10 +144,10 @@ Every session feeds the next one. When Claude makes a mistake:
 
 1. Fix the problem in this session
 2. Document it in `docs/learnings.md`
-3. Extract a rule and add it to `CLAUDE.md` or `CONSTRAINTS.md`
-4. Commit: `docs: add constraint for [what you learned]`
+3. Make it impossible to repeat, cheapest layer first: change the API or types so it can't be written; else add a lint rule or test whose message says what to do instead (`eslint.config.mjs`); only if neither works, add a prose rule to `CLAUDE.md` or `CONSTRAINTS.md`
+4. Commit: `chore: prevent [what you learned]`
 
-The whole team benefits immediately — Claude won't repeat that mistake.
+A check catches the mistake every time, for every agent; a prose rule only works when the agent reads and follows it. Keeping prose for judgment calls also keeps `CLAUDE.md` short.
 
 ---
 
