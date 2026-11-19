@@ -47,7 +47,7 @@ Enter `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-de
 ## Code Quality
 - TypeScript strict mode: `strict: true`
 - Hooks auto-run on every file write outside `.claude/`: eslint → prettier
-- No `any`, no `// @ts-ignore`, no committed `console.log` debug statements
+- `eslint.config.mjs` bans `any`, `// @ts-ignore` and committed `console.log`; each error message says what to write instead
 - Never weaken a test or a threshold to make a change pass — fix the implementation (`/open-pr` checks the diff against `CONSTRAINTS.md`)
 
 ## Git & Branching Rules
@@ -58,5 +58,9 @@ Enter `spec-driven-development`, `planning-and-task-breakdown`, `doubt-driven-de
 - See `docs/git-workflow.md` for the full team branching strategy
 
 ## Compound Engineering Loop
-Error encountered → log in docs/learnings.md → extract rule → update CLAUDE.md
-This loop makes Claude Code progressively better on your codebase.
+Error encountered → log in docs/learnings.md → make it impossible to repeat, cheapest layer first:
+1. Change the API or types so the mistake can't be written
+2. Add a lint rule or test whose error message says what to do instead (`eslint.config.mjs`)
+3. Only if neither can express it, add a prose rule here or in `CONSTRAINTS.md`
+
+When fixing a workaround, remove its other copies too: agents copy whatever patterns the code already has.

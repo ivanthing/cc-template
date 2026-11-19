@@ -19,10 +19,10 @@ src/
 ## Import Rules
 - Use absolute imports: `@/components/ui/button`
 - Never use relative imports across directories (`../../lib/...`)
-- Code in `server/` must never be imported by client components
+- Every module in `server/` starts with `import "server-only";` (`npm i server-only`): the build then fails if a client component imports it
 
 ## Component Rules
 - File names: PascalCase for components (`UserProfile.tsx`), kebab-case for utilities (`format-date.ts`)
 - One primary export per component file
-- All props must be explicitly typed -- no `any`
+- All props must be explicitly typed (`any` is a lint error)
 - Components over 200 lines must be split
